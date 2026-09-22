@@ -1,12 +1,41 @@
 name: Build YESPSAYT iOS
+
 on:
   workflow_dispatch:
   push:
     branches: [ "main", "master" ]
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: macos-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Build unsigned simulator app
-        run: xcodebuild -project YESPSAYT.xcodeproj -scheme YESPSAYT -sdk iphonesimulator -configuration Debug CODE_SIGNING_ALLOWED=NO build
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Build YESPSAYT for iPhone Simulator
+        run: |
+          xcodebuild \
+            -project YESPSAYT.xcodeproj \
+            -scheme YESPSAYT \
+            -sdk iphonesimulator \
+            -configuration Debug \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package YESPSAYT app
+        run: |
+          cd build/Build/Products/Debug-iphonesimulator
+          zip -r "$GITHUB_WORKSPACE/YESPSAYT-iOS-Simulator.zip" YESPSAYT.app
+
+      - name: Upload YESPSAYT
+        uses: actions/upload-artifact@v4
+        with:
+          name: YESPSAYT-iOS-Simulator
+          path: YESPSAYT-iOS-Simulator.zip
+          if-no-files-found: error
+          retention-days: 30
